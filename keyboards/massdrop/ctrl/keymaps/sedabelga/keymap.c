@@ -64,6 +64,9 @@ void matrix_scan_user(void) {
 #define MODS_CTRL  (get_mods() & MOD_BIT(KC_LCTL) || get_mods() & MOD_BIT(KC_RCTRL))
 #define MODS_ALT  (get_mods() & MOD_BIT(KC_LALT) || get_mods() & MOD_BIT(KC_RALT))
 
+bool is_left_bracket_active = false;  
+bool is_right_bracket_active = false;  
+
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     static uint32_t key_timer;
 
@@ -72,6 +75,8 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             /*
             This piece of code detects if Key COMMA. If the ALT Key is hold
             it shall be send the symbol left bracket (<) (as in a US Keyboard with SHIFT) 
+            we need to take into account if the ALT is released before or after the release
+            of the KC_KOMMA key
             */
             if (MODS_ALT) {
                 //Save modes
@@ -81,14 +86,28 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 // without Shift on. 
                 clear_mods();
                 if (record->event.pressed) {
+                        is_left_bracket_active=true;
                         register_code(KC_NUBS);                      
                 }
                 else{             
                         unregister_code(KC_NUBS);
+                        is_left_bracket_active=false;
                 }
                 // restore the mod states
                 set_mods(temp_mod);
                 return false;
+            }
+            else{
+                if (is_left_bracket_active)
+                {
+                    //In this case the ALT kay has been already release before the KC_DOT key is released
+                    //in case of the left bracket is yet active, it must be released
+                    if (!record->event.pressed)
+                    {
+                        unregister_code(KC_NUBS);
+                        is_left_bracket_active=false;
+                    }
+                }
             }
              /*else process KC_COMMA as usual.*/
             return true;
@@ -96,6 +115,8 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
             /*
             This piece of code detects if Key COMMA. If the ALT Key is hold
             it shall be send the symbol right bracket (>) (as in a US Keyboard with SHIFT) 
+            we need to take into account if the ALT is released before or after the release
+            of the KC_DOT ke
             */
             if (MODS_ALT) {
                 //Save modes
@@ -105,13 +126,27 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 // without Shift on. 
                 clear_mods();
                 if (record->event.pressed) {
+                        is_right_bracket_active=true;
                         register_code16(LSFT(KC_NUBS));
                 } else{
                         unregister_code16(LSFT(KC_NUBS));
+                        is_right_bracket_active=false;
                 }
                 // restore the mod states
                 set_mods(temp_mod);
                 return false;
+            }
+            else{
+                if (is_right_bracket_active)
+                {
+                    //In this case the ALT kay has been already release before the KC_DOT key is released
+                    //in case of the right bracket is yet active, it must be released
+                    if (!record->event.pressed)
+                    {
+                        unregister_code16(LSFT(KC_NUBS));
+                        is_right_bracket_active=false;
+                    }
+                }
             }
              /*else process KC_COMMA as usual.*/
             return true;
